@@ -13,6 +13,7 @@ pipeline {
 
         stage('Git Clone') {
             steps {
+                git branch: 'main',
                 git 'https://github.com/mrkapildhokane-devops/java-app.git'
             }
         }
