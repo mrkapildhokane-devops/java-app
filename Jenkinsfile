@@ -1,16 +1,21 @@
-```groovy
 pipeline {
     agent any
 
     tools {
-        maven 'maven'
+        maven 'Maven'
     }
 
     environment {
-        DOCKER_IMAGE = 'kapildhokane/java-app'
+        DOCKER_IMAGE = "kapildhokane/java-app"
     }
 
     stages {
+
+        stage('Git Clone') {
+            steps {
+                git 'https://github.com/mrkapildhokane-devops/java-app.git'
+            }
+        }
 
         stage('Compile') {
             steps {
@@ -33,23 +38,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE:${BUILD_NUMBER} .'
-                sh 'docker tag $DOCKER_IMAGE:${BUILD_NUMBER} $DOCKER_IMAGE:latest'
             }
         }
 
         stage('Push Image') {
             steps {
                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'USER',
-                        passwordVariable: 'PASS'
-                    )
+                usernamePassword(
+                credentialsId: 'dockerhub',
+                usernameVariable: 'USER',
+                passwordVariable: 'PASS'
+                )
                 ]) {
+
                     sh '''
-                        echo $PASS | docker login -u $USER --password-stdin
-                        docker push $DOCKER_IMAGE:${BUILD_NUMBER}
-                        docker push $DOCKER_IMAGE:latest
+                    docker login -u $USER -p $PASS
+                    docker push $DOCKER_IMAGE:${BUILD_NUMBER}
                     '''
                 }
             }
@@ -58,27 +62,10 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                    kubectl set image deployment/java-app \
-                    java-app=$DOCKER_IMAGE:${BUILD_NUMBER}
-
-                    kubectl rollout status deployment/java-app
+                kubectl set image deployment/java-app \
+                java-app=$DOCKER_IMAGE:${BUILD_NUMBER}
                 '''
             }
         }
     }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully.'
-        }
-
-        failure {
-            echo 'Pipeline failed.'
-        }
-
-        always {
-            cleanWs()
-        }
-    }
 }
-```
