@@ -12,10 +12,11 @@ pipeline {
     stages {
 
         stage('Git Clone') {
-            steps {
-                git branch: 'main',
-                git 'https://github.com/mrkapildhokane-devops/java-app.git'
-            }
+    steps {
+        git branch: 'main',
+            url: 'https://github.com/mrkapildhokane-devops/java-app.git'
+    }
+}
         }
 
         stage('Compile') {
