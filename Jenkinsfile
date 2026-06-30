@@ -13,7 +13,7 @@ pipeline {
 
         stage('Git Clone') {
             steps {
-                git 'https://github.com/kapildhokane/java-app.git'
+                git 'https://github.com/mrkapildhokane-devops/java-app.git'
             }
         }
 
