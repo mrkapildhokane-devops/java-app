@@ -11,11 +11,8 @@ pipeline {
 
     stages {
 
-        stage('Git Clone') {
-            steps {
-                git 'https://github.com/mrkapildhokane-devops/java-app.git'
-            }
-        }
+        
+        
 
         stage('Compile') {
             steps {
