@@ -1,3 +1,4 @@
+```groovy
 pipeline {
     agent any
 
@@ -6,18 +7,10 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "kapildhokane/java-app"
+        DOCKER_IMAGE = 'kapildhokane/java-app'
     }
 
     stages {
-
-        stage('Git Clone') {
-    steps {
-        git branch: 'main',
-            url: 'https://github.com/mrkapildhokane-devops/java-app.git'
-    }
-}
-        }
 
         stage('Compile') {
             steps {
@@ -40,22 +33,23 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $DOCKER_IMAGE:${BUILD_NUMBER} .'
+                sh 'docker tag $DOCKER_IMAGE:${BUILD_NUMBER} $DOCKER_IMAGE:latest'
             }
         }
 
         stage('Push Image') {
             steps {
                 withCredentials([
-                usernamePassword(
-                credentialsId: 'dockerhub',
-                usernameVariable: 'USER',
-                passwordVariable: 'PASS'
-                )
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'USER',
+                        passwordVariable: 'PASS'
+                    )
                 ]) {
-
                     sh '''
-                    docker login -u $USER -p $PASS
-                    docker push $DOCKER_IMAGE:${BUILD_NUMBER}
+                        echo $PASS | docker login -u $USER --password-stdin
+                        docker push $DOCKER_IMAGE:${BUILD_NUMBER}
+                        docker push $DOCKER_IMAGE:latest
                     '''
                 }
             }
@@ -64,10 +58,27 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                kubectl set image deployment/java-app \
-                java-app=$DOCKER_IMAGE:${BUILD_NUMBER}
+                    kubectl set image deployment/java-app \
+                    java-app=$DOCKER_IMAGE:${BUILD_NUMBER}
+
+                    kubectl rollout status deployment/java-app
                 '''
             }
         }
     }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed.'
+        }
+
+        always {
+            cleanWs()
+        }
+    }
 }
+```
